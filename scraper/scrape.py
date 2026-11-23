@@ -36,6 +36,7 @@ import argparse
 import datetime as dt
 import html
 import json
+import os
 import re
 import sys
 import time
@@ -67,6 +68,13 @@ USER_AGENT = (
     "recent-hydrology-ml-papers/1.0 "
     f"(hydrology + ML paper index; mailto:{CONTACT_EMAIL})"
 )
+
+# OpenAlex now meters unauthenticated requests against a tiny daily budget
+# shared across the whole network IP, so a key is effectively required (it is
+# free, with its own per-user budget). The key is read from the environment so
+# it never lives in the repo. Without it the scraper still runs but will likely
+# be rate-limited. Get one: https://help.openalex.org/api/authentication/
+OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "").strip()
 
 # How far back to look, in days. Anything older than ~1 year is dropped
 # because the front-end only has week/month/year buckets.
@@ -217,6 +225,34 @@ TAG_REGIONAL_CI = _ci(
     r"cross[- ](basin|catchment|region)",
 )
 
+# ---- exclusion gate: strong non-hydrology domain signals -----------------
+# Some hydro terms ("water level", "discharge", "reservoir", "basin") are
+# heavily reused in unrelated engineering fields. If the text shows a strong
+# signal from one of those domains, drop it even if a weak hydro term matched.
+# Examples this catches: nuclear steam-generator water-level control, plasma
+# "discharge", battery "discharge", oil/gas "reservoirs".
+EXCLUDE_CI = _ci(
+    r"steam generator",
+    r"nuclear (reactor|power plant|fuel)",
+    r"\breactor core\b",
+    r"dielectric (barrier )?discharge",
+    r"plasma discharge",
+    r"gas discharge",
+    r"electrostatic discharge",
+    r"partial discharge",             # high-voltage insulation
+    r"battery (discharge|charging|state of charge)",
+    r"capacitor",
+    r"supercapacitor",
+    r"oil (and|&) gas reservoir",
+    r"petroleum reservoir",
+    r"hydrocarbon reservoir",
+    r"combustion chamber",
+    r"blood (flow|pressure)",
+    r"cash flow",
+    r"traffic flow",
+    r"water[- ]cooled",               # cooling systems, not hydrology
+)
+
 GITHUB_RE = re.compile(
     r"https?://(?:www\.)?(?:github\.com|gitlab\.com|bitbucket\.org|zenodo\.org|huggingface\.co)/[^\s)\]\}<>\"']+",
     re.IGNORECASE,
@@ -238,6 +274,10 @@ def classify(text):
     is_hydro = _matches(text, HYDRO_CI)
     is_ml = _matches(text, ML_CI, ML_CS)
     if not (is_hydro and is_ml):
+        return set()
+    # Drop papers with a strong non-hydrology domain signal (nuclear steam
+    # generators, plasma/battery "discharge", oil & gas "reservoirs", ...).
+    if _matches(text, EXCLUDE_CI):
         return set()
 
     tags = {"ml-hydrology"}  # broad bucket: everything that passed the gate
@@ -411,26 +451,48 @@ def fetch_arxiv(now, lookback_days):
 # Crossref
 # --------------------------------------------------------------------------
 
-def _crossref_date(item):
-    """Pick the most relevant date from a Crossref item.
+def _crossref_date(item, now):
+    """Pick the most relevant, non-future date from a Crossref item.
 
-    Prefer online/issued dates over the 'print' date, which publishers often
-    set to a future issue (e.g. 2027-01-01) and which would otherwise inflate
-    recency. Any date in the future is clamped to today by the caller.
+    Publishers often set only a 'print' date far in the future (e.g. 2027-03)
+    with no online date. Using that would push the paper into the wrong recency
+    bucket. So we:
+      1. prefer true online/issued dates;
+      2. if the best available date is in the future, fall back to 'created'
+         (when Crossref first registered the record), which reflects real
+         recency;
+      3. never return a future date.
+    Returns a date, or None if nothing usable.
     """
-    for key in ("published-online", "published", "issued", "created", "published-print"):
+    def parse(key):
         node = item.get(key)
-        if node and node.get("date-parts"):
-            parts = node["date-parts"][0]
-            if not parts:
-                continue
-            y = parts[0]
-            m = parts[1] if len(parts) > 1 else 1
-            d = parts[2] if len(parts) > 2 else 1
-            try:
-                return dt.date(int(y), int(m), int(d))
-            except (ValueError, TypeError):
-                continue
+        if not node or not node.get("date-parts"):
+            return None
+        parts = node["date-parts"][0]
+        if not parts:
+            return None
+        y = parts[0]
+        m = parts[1] if len(parts) > 1 else 1
+        d = parts[2] if len(parts) > 2 else 1
+        try:
+            return dt.date(int(y), int(m), int(d))
+        except (ValueError, TypeError):
+            return None
+
+    created = parse("created")
+    for key in ("published-online", "published", "issued", "published-print"):
+        cand = parse(key)
+        if cand is None:
+            continue
+        if cand <= now:
+            return cand
+        # candidate is in the future: prefer 'created' as the real signal
+        if created is not None and created <= now:
+            return created
+        return now  # last resort: no better info than "around now"
+    # no issue/print date at all -> fall back to created
+    if created is not None:
+        return min(created, now)
     return None
 
 
@@ -499,15 +561,11 @@ def fetch_crossref(now, lookback_days):
                         continue
                     abstract = clean(item.get("abstract", ""))
 
-                    pdate = _crossref_date(item)
+                    pdate = _crossref_date(item, now)
                     if pdate is None:
                         continue
                     oldest_on_page = (pdate if oldest_on_page is None
                                       else min(oldest_on_page, pdate))
-                    # Publishers sometimes set a future 'issue' date; don't let
-                    # that inflate recency. Treat anything in the future as today.
-                    if pdate > now:
-                        pdate = now
 
                     doi = item.get("DOI", "")
                     if not doi or doi in papers:
@@ -612,6 +670,8 @@ def fetch_openalex(now, lookback_days):
                            "authorships,abstract_inverted_index"),
                 "mailto": CONTACT_EMAIL,
             }
+            if OPENALEX_API_KEY:
+                params["api_key"] = OPENALEX_API_KEY
             url = OPENALEX_API + "?" + urllib.parse.urlencode(params)
             raw = http_get(url)
             try:

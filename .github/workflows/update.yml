@@ -22,7 +22,10 @@ jobs:
       - name: Harvest papers
         # NOTE: OpenAlex harvesting is being validated separately; skip it in
         # CI for now. Remove --skip-openalex (and add papers_openalex.txt to
-        # the git-add line below) once it is verified.
+        # the git-add line below) once it is verified. The OPENALEX_API_KEY
+        # secret is already wired in so no further change is needed then.
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
         run: python3 scraper/scrape.py --days 400 --skip-openalex
 
       - name: Commit refreshed data

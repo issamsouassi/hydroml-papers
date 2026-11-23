@@ -15,16 +15,23 @@
     <meta name="author" content="Issam Souassi" />
     <meta name="robots" content="index, follow" />
 
+    <link rel="canonical" href="https://issamsouassi.github.io/recent-hydrology-ml-papers/" />
+
     <!-- Open Graph / social preview -->
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://issamsouassi.github.io/recent-hydrology-ml-papers/" />
     <meta property="og:title" content="Recent Hydrology &amp; Machine Learning Papers" />
     <meta property="og:description"
-        content="Recent papers at the intersection of hydrology and AI/ML/DL, from arXiv and Crossref, updated every few hours." />
+        content="Recent papers at the intersection of hydrology and AI/ML/DL, from arXiv, Crossref, and OpenAlex, updated every few hours." />
     <meta property="og:site_name" content="Recent Hydrology-ML Papers" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="https://issamsouassi.github.io/recent-hydrology-ml-papers/preview.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Recent Hydrology &amp; Machine Learning Papers" />
     <meta name="twitter:description"
-        content="Recent hydrology + AI/ML/DL papers from arXiv and Crossref, updated every few hours." />
+        content="Recent hydrology + AI/ML/DL papers from arXiv, Crossref, and OpenAlex, updated every few hours." />
+    <meta name="twitter:image" content="https://issamsouassi.github.io/recent-hydrology-ml-papers/preview.png" />
 
     <!-- Structured data: helps search engines understand the page -->
     <script type="application/ld+json">
@@ -204,6 +211,12 @@
             color: #35565f;
         }
 
+        .pubdate {
+            color: #7fa6b3;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+
         /* ---- filters ---- */
         .filters-wrap {
             display: flex;
@@ -249,6 +262,44 @@
             background: #1572a1;
             color: #fff;
             box-shadow: 0 1px 4px rgba(21, 114, 161, 0.4);
+        }
+
+        /* keyboard focus visibility (accessibility) */
+        .filter:focus-visible,
+        .search-box:focus-visible {
+            outline: 2px solid #1572a1;
+            outline-offset: 2px;
+        }
+
+        /* ---- search + status ---- */
+        .search-wrap {
+            display: flex;
+            justify-content: center;
+            margin: 1.1ex 0 0.3ex;
+        }
+
+        .search-box {
+            font-family: inherit;
+            font-size: 0.9em;
+            width: 100%;
+            max-width: 420px;
+            padding: 0.5em 0.9em;
+            color: #0c3a47;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(21, 114, 161, 0.3);
+            border-radius: 999px;
+        }
+
+        .search-box::placeholder {
+            color: #7fa6b3;
+        }
+
+        .status-line {
+            text-align: center;
+            color: #3b7d92;
+            font-size: 0.8em;
+            margin: 0.6ex 0 0;
+            min-height: 1.2em;
         }
 
         /* ---- meta / tags ---- */
@@ -344,6 +395,13 @@
             </div>
         </div>
 
+        <div class="search-wrap">
+            <input type="search" id="search" class="search-box"
+                   placeholder="search titles and authors&hellip;"
+                   aria-label="Search papers by title or author" />
+        </div>
+        <p class="status-line" id="status-line" aria-live="polite"></p>
+
         <h3>this week</h3>
         <ul class="spaced-list" id="last_week"></ul>
         <h3>this month</h3>
@@ -361,7 +419,9 @@
         <script>
             var activeCategory = "both";
             var activeSource = "both";
+            var searchTerm = "";
             var allItems = [];
+            var lastUpdated = "";
 
             // decorative wave strip under the title
             (function () {
@@ -425,6 +485,13 @@
                 authors.textContent = formatAuthors(paper.authorlist);
                 li.appendChild(authors);
 
+                if (paper.date) {
+                    var when = document.createElement('span');
+                    when.className = "pubdate";
+                    when.textContent = " \u00B7 " + paper.date;
+                    li.appendChild(when);
+                }
+
                 paper.cats.forEach(function (c) {
                     var tag = document.createElement('span');
                     tag.className = "tag tag-" + c;
@@ -476,16 +543,22 @@
 
             function applyFilters() {
                 var counts = { last_week: 0, last_month: 0, last_year: 0 };
+                var total = 0;
+                var q = searchTerm.trim().toLowerCase();
                 allItems.forEach(function (entry) {
                     var paper = entry.paper;
                     var catOk = activeCategory === "both" ||
                         paper.cats.indexOf(activeCategory) !== -1;
                     var srcOk = activeSource === "both" ||
                         paper.source.toLowerCase() === activeSource;
-                    var show = catOk && srcOk;
+                    var searchOk = q === "" || entry.haystack.indexOf(q) !== -1;
+                    var show = catOk && srcOk && searchOk;
                     entry.el.style.display = show ? "" : "none";
-                    if (show && counts.hasOwnProperty(paper.date_class)) {
-                        counts[paper.date_class]++;
+                    if (show) {
+                        total++;
+                        if (counts.hasOwnProperty(paper.date_class)) {
+                            counts[paper.date_class]++;
+                        }
                     }
                 });
                 Object.keys(counts).forEach(function (bucket) {
@@ -494,6 +567,21 @@
                         placeholder.style.display = counts[bucket] === 0 ? "" : "none";
                     }
                 });
+                updateStatus(total);
+            }
+
+            function updateStatus(total) {
+                var el = document.getElementById('status-line');
+                if (!el) { return; }
+                var txt = total + (total === 1 ? " paper" : " papers");
+                if (activeCategory !== "both" || activeSource !== "both" ||
+                    searchTerm.trim() !== "") {
+                    txt += " shown";
+                }
+                if (lastUpdated) {
+                    txt += " \u00B7 updated " + lastUpdated;
+                }
+                el.textContent = txt;
             }
 
             function addEmptyPlaceholders() {
@@ -529,31 +617,56 @@
                     if (!list) { return; }
                     var el = makePaperItem(paper);
                     list.appendChild(el);
-                    allItems.push({ el: el, paper: paper });
+                    var haystack = (paper.title + " " +
+                        paper.authorlist.join(" ")).toLowerCase();
+                    allItems.push({ el: el, paper: paper, haystack: haystack });
+                    if (paper.date && paper.date > lastUpdated) {
+                        lastUpdated = paper.date;
+                    }
                 });
                 addEmptyPlaceholders();
                 applyFilters();
             });
 
-            document.querySelectorAll('#topic-filters .filter').forEach(function (f) {
-                f.addEventListener('click', function () {
-                    document.querySelectorAll('#topic-filters .filter').forEach(function (x) {
-                        x.classList.remove('active');
-                    });
-                    f.classList.add('active');
-                    activeCategory = f.dataset.cat;
-                    applyFilters();
-                });
+            document.getElementById('search').addEventListener('input', function () {
+                searchTerm = this.value;
+                applyFilters();
             });
-            document.querySelectorAll('#source-filters .filter').forEach(function (f) {
-                f.addEventListener('click', function () {
-                    document.querySelectorAll('#source-filters .filter').forEach(function (x) {
-                        x.classList.remove('active');
+
+            function wireFilters(selector, onSelect) {
+                var btns = document.querySelectorAll(selector + ' .filter');
+                btns.forEach(function (f) {
+                    // accessibility: make the span behave like a toggle button
+                    f.setAttribute('role', 'button');
+                    f.setAttribute('tabindex', '0');
+                    f.setAttribute('aria-pressed',
+                        f.classList.contains('active') ? 'true' : 'false');
+
+                    function activate() {
+                        btns.forEach(function (x) {
+                            x.classList.remove('active');
+                            x.setAttribute('aria-pressed', 'false');
+                        });
+                        f.classList.add('active');
+                        f.setAttribute('aria-pressed', 'true');
+                        onSelect(f);
+                        applyFilters();
+                    }
+                    f.addEventListener('click', activate);
+                    f.addEventListener('keydown', function (e) {
+                        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                            e.preventDefault();
+                            activate();
+                        }
                     });
-                    f.classList.add('active');
-                    activeSource = f.dataset.source;
-                    applyFilters();
                 });
+            }
+
+            wireFilters('#topic-filters', function (f) {
+                activeCategory = f.dataset.cat;
+            });
+            wireFilters('#source-filters', function (f) {
+                activeSource = f.dataset.source;
             });
         </script>
     </main>

@@ -56,6 +56,10 @@ After changing either side, re-validate (see "How to verify" below).
 A paper is kept only if it matches BOTH gates:
 - gate 1 hydrology: `HYDRO_CI`
 - gate 2 AI/ML/DL: `ML_CI` (case-insensitive) or `ML_CS` (case-sensitive)
+...and is NOT caught by the exclusion gate `EXCLUDE_CI` (strong non-hydrology
+domain signals like nuclear steam generators, plasma/battery "discharge", oil &
+gas "reservoirs"). Add to `EXCLUDE_CI` when a false positive recurs from a
+specific domain rather than loosening/tightening the hydro terms themselves.
 
 Kept papers always get `ml-hydrology`, plus any of:
 `deep-learning`, `lstm`, `rainfall-runoff`, `forecasting`, `regional-hydrology`
@@ -91,6 +95,23 @@ To add a new topic tag end-to-end:
   - Some preprints (notably Copernicus) expose no abstract to Crossref, so
     `classify()` sees title-only and may attach fewer fine-grained tags. This
     is a metadata limitation, not a bug — the paper still appears.
+  - Dates: publishers often set only a future 'print' date (e.g. 2027-03) with
+    no online date. `_crossref_date(item, now)` prefers true online dates and,
+    when the best date is in the future, falls back to `created` (DOI
+    registration) so recency is honest. It never returns a future date. Do NOT
+    reintroduce "clamp future to today" — it dumped everything into last_week.
+- **OpenAlex**:
+  - Query with `title_and_abstract.search` (NOT the broad full-text `search`),
+    which keeps result volume manageable; otherwise paging never finishes and
+    trips rate limits. Page with `cursor` (meta.next_cursor), sorted by
+    publication_date desc; stop once a page's oldest item predates the cutoff.
+  - OpenAlex meters UNAUTHENTICATED requests against a tiny daily budget shared
+    across the whole network IP — so a key is effectively required (free, with
+    its own budget). Read it from the `OPENALEX_API_KEY` env var; never commit
+    it. In CI it comes from a repo secret of the same name.
+  - Abstracts arrive as an inverted index ({word: [positions]}); rebuild plain
+    text with `_openalex_abstract()` before classifying. This is why OpenAlex
+    tags preprints better than Crossref does.
   - Publishers often set a future `published-print` date (e.g. 2027-01-01).
     `_crossref_date()` prefers online/issued dates, and the caller clamps any
     future date to today so it doesn't inflate recency.
