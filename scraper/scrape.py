@@ -36,7 +36,6 @@ import argparse
 import datetime as dt
 import html
 import json
-import os
 import re
 import sys
 import time
@@ -50,7 +49,6 @@ import xml.etree.ElementTree as ET
 
 ARXIV_API = "https://export.arxiv.org/api/query"
 CROSSREF_API = "https://api.crossref.org/works"
-OPENALEX_API = "https://api.openalex.org/works"
 
 # arXiv subject classes where hydrology + ML work tends to appear.
 ARXIV_CATEGORIES = [
@@ -68,13 +66,6 @@ USER_AGENT = (
     "recent-hydrology-ml-papers/1.0 "
     f"(hydrology + ML paper index; mailto:{CONTACT_EMAIL})"
 )
-
-# OpenAlex now meters unauthenticated requests against a tiny daily budget
-# shared across the whole network IP, so a key is effectively required (it is
-# free, with its own per-user budget). The key is read from the environment so
-# it never lives in the repo. Without it the scraper still runs but will likely
-# be rate-limited. Get one: https://help.openalex.org/api/authentication/
-OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "").strip()
 
 # How far back to look, in days. Anything older than ~1 year is dropped
 # because the front-end only has week/month/year buckets.
@@ -135,6 +126,23 @@ HYDRO_CI = _ci(
     r"rating curve",
     r"water cycle",
     r"land surface model",
+    # large-sample / regionalization vocabulary (common in ML-hydrology)
+    r"ungauged (basin|catchment)",
+    r"large[- ]sample hydrolog",
+    r"regionali[sz]ation",
+    r"prediction(s)? in ungauged basins",
+    r"hydrological model",
+    r"hydrologic(al)? (signature|process|model|simulation|prediction)",
+    r"\bCAMELS\b",
+    r"\bCaravan\b",
+    r"\bhydrograph\b",
+    r"low[- ]flow",
+    r"high[- ]flow",
+    r"peak flow",
+    r"flow duration curve",
+    r"nash[- ]sutcliffe",
+    r"\bKGE\b",
+    r"precipitation (target|product|record|dataset)",
 )
 
 # ---- broad gate 2: is this AI / ML / DL? --------------------------------
@@ -157,6 +165,24 @@ ML_CI = _ci(
     r"ensemble learning",
     r"generative model",
     r"explainable (ai|artificial intelligence)",
+    # modern / probabilistic ML vocabulary seen in hydrology-ML work
+    r"diffusion model",
+    r"state[- ]space model",
+    r"mixture[- ]of[- ]experts",
+    r"\bemulator\b",
+    r"probabilistic (forecast|prediction|model)",
+    r"deep generative",
+    r"data[- ]driven (model|approach|method|prediction|framework)",
+    r"attention mechanism",
+    r"encoder[- ]decoder",
+    r"autoencoder",
+    # named large-sample benchmark datasets: these exist specifically as the
+    # training/benchmark infrastructure for ML-hydrology, so a hydrology paper
+    # centered on one is in scope even if it doesn't say "machine learning".
+    r"\bCAMELS\b",
+    r"\bCaravan\b",
+    r"\bLamaH\b",
+    r"\bHYSETS\b",
 )
 ML_CS = _cs(
     r"\bLSTM\b",
@@ -606,139 +632,6 @@ def fetch_crossref(now, lookback_days):
 
 
 # --------------------------------------------------------------------------
-# OpenAlex
-# --------------------------------------------------------------------------
-
-def _openalex_abstract(inverted_index):
-    """OpenAlex stores abstracts as {word: [positions]}. Rebuild the plain
-    text so classify() can read it. Returns '' if absent."""
-    if not inverted_index:
-        return ""
-    positions = []
-    for word, idxs in inverted_index.items():
-        for i in idxs:
-            positions.append((i, word))
-    positions.sort(key=lambda t: t[0])
-    return " ".join(w for _, w in positions)
-
-
-def _openalex_id(work):
-    """Prefer a bare DOI as the id; fall back to the OpenAlex work id."""
-    doi = work.get("doi") or ""
-    if doi:
-        # doi field looks like 'https://doi.org/10.xxxx/yyyy'
-        return doi.rsplit("doi.org/", 1)[-1]
-    oa = work.get("id") or ""
-    return oa.rsplit("/", 1)[-1] if oa else ""
-
-
-def fetch_openalex(now, lookback_days):
-    cutoff = now - dt.timedelta(days=lookback_days)
-    # Same focused phrases as Crossref; OpenAlex's `search` covers title +
-    # abstract + fulltext, and crucially returns abstracts we can re-classify.
-    queries = [
-        "hydrology deep learning",
-        "hydrology machine learning",
-        "streamflow deep learning",
-        "rainfall runoff neural network",
-        "flood forecasting machine learning",
-        "soil moisture deep learning",
-        "groundwater machine learning",
-        "drought forecasting deep learning",
-        "LSTM streamflow",
-        "precipitation nowcasting deep learning",
-        "evapotranspiration machine learning",
-        "snowmelt runoff machine learning",
-    ]
-    papers = {}
-    for query in queries:
-        cursor = "*"
-        per_page = 100
-        done = False
-        while not done:
-            params = {
-                # title+abstract search is far tighter than full-text `search`,
-                # so each query returns a manageable number of pages instead of
-                # thousands of loosely-related full-text hits (which trips rate
-                # limits and never finishes). classify() re-filters afterwards.
-                "filter": (f"from_publication_date:{cutoff.isoformat()},"
-                           f"title_and_abstract.search:{query}"),
-                "sort": "publication_date:desc",
-                "per-page": per_page,
-                "cursor": cursor,
-                "select": ("id,doi,title,publication_date,"
-                           "authorships,abstract_inverted_index"),
-                "mailto": CONTACT_EMAIL,
-            }
-            if OPENALEX_API_KEY:
-                params["api_key"] = OPENALEX_API_KEY
-            url = OPENALEX_API + "?" + urllib.parse.urlencode(params)
-            raw = http_get(url)
-            try:
-                data = json.loads(raw)
-            except json.JSONDecodeError:
-                break
-            results = data.get("results", [])
-            if not results:
-                break
-
-            oldest_on_page = None
-            for w in results:
-                title = clean(w.get("title") or "")
-                if not title:
-                    continue
-                abstract = clean(_openalex_abstract(
-                    w.get("abstract_inverted_index")))
-
-                pub = w.get("publication_date") or ""
-                try:
-                    pdate = dt.datetime.strptime(pub[:10], "%Y-%m-%d").date()
-                except ValueError:
-                    continue
-                oldest_on_page = (pdate if oldest_on_page is None
-                                  else min(oldest_on_page, pdate))
-                if pdate > now:
-                    pdate = now
-
-                wid = _openalex_id(w)
-                if not wid or wid in papers:
-                    continue
-
-                cats = classify(title + " " + abstract)
-                if not cats:
-                    continue
-
-                authors = []
-                for a in w.get("authorships", []) or []:
-                    nm = (a.get("author") or {}).get("display_name")
-                    if nm:
-                        authors.append(clean(nm))
-
-                repo = find_repo(abstract)
-                link = (f"https://doi.org/{wid}" if "/" in wid and wid[0].isdigit()
-                        else (w.get("doi") or w.get("id")))
-                papers[wid] = {
-                    "title": title,
-                    "authors": authors,
-                    "id": wid,
-                    "repo": repo,
-                    "date": pdate,
-                    "cats": cats,
-                    "link": link,
-                }
-
-            # OpenAlex cursor paging: follow meta.next_cursor until exhausted.
-            next_cursor = (data.get("meta") or {}).get("next_cursor")
-            if not next_cursor or next_cursor == cursor:
-                done = True
-            cursor = next_cursor
-            if oldest_on_page is not None and oldest_on_page < cutoff:
-                done = True
-            time.sleep(2)  # be polite to OpenAlex (avoids 429 rate limiting)
-    return list(papers.values())
-
-
-# --------------------------------------------------------------------------
 # Output
 # --------------------------------------------------------------------------
 
@@ -780,10 +673,8 @@ def main():
                     help="lookback window in days (default: %(default)s)")
     ap.add_argument("--arxiv-out", default="papers_arxiv.txt")
     ap.add_argument("--crossref-out", default="papers_crossref.txt")
-    ap.add_argument("--openalex-out", default="papers_openalex.txt")
     ap.add_argument("--skip-arxiv", action="store_true")
     ap.add_argument("--skip-crossref", action="store_true")
-    ap.add_argument("--skip-openalex", action="store_true")
     args = ap.parse_args()
 
     now = dt.date.today()
@@ -793,12 +684,6 @@ def main():
         crossref = fetch_crossref(now, args.days)
         n = write_file(args.crossref_out, crossref, now)
         print(f"  wrote {n} Crossref papers -> {args.crossref_out}", file=sys.stderr)
-
-    if not args.skip_openalex:
-        print("Harvesting OpenAlex (REST API)...", file=sys.stderr)
-        openalex = fetch_openalex(now, args.days)
-        n = write_file(args.openalex_out, openalex, now)
-        print(f"  wrote {n} OpenAlex papers -> {args.openalex_out}", file=sys.stderr)
 
     if not args.skip_arxiv:
         print("Harvesting arXiv (Atom API)...", file=sys.stderr)

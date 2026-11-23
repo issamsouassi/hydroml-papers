@@ -17,17 +17,12 @@ Inspired by [isogeni.es](https://isogeni.es/) and the
   indexes journal articles **and preprints** across essentially every publisher
   (Water Resources Research, Journal of Hydrology, HESS, EGUsphere/Copernicus
   discussion papers, Environmental Modelling & Software, ...).
-- **OpenAlex** — via the public [REST API](https://docs.openalex.org/), a broad
-  index (~250M works) that catches conference papers and society-journal work
-  missing from arXiv/Crossref, and supplies abstracts that improve tagging.
-  Requires a free API key (see "OpenAlex API key" below).
 
 ## How it works
 
 ```
 scraper/scrape.py  ──>  papers_arxiv.txt
                    ──>  papers_crossref.txt
-                   ──>  papers_openalex.txt
 index.html  ──(fetch + render in the browser)──>  the page
 ```
 
@@ -66,7 +61,7 @@ get any of these narrower tags, which drive the on-page topic filter:
 
 The page has two filter rows: **topic** (all / deep learning / LSTM /
 rainfall-runoff / forecasting / regional) and **source** (all / arXiv /
-Crossref / OpenAlex), plus a **search box** that filters by title and author.
+Crossref), plus a **search box** that filters by title and author.
 
 ## Running the scraper
 
@@ -75,31 +70,12 @@ No third-party dependencies — Python 3.8+ standard library only.
 ```bash
 python3 scraper/scrape.py                 # 400-day lookback (default)
 python3 scraper/scrape.py --days 180      # shorter window
-python3 scraper/scrape.py --skip-openalex # only arXiv + Crossref
-python3 scraper/scrape.py --skip-arxiv    # skip arXiv
-python3 scraper/scrape.py --skip-crossref # skip Crossref
+python3 scraper/scrape.py --skip-arxiv    # only refresh Crossref
+python3 scraper/scrape.py --skip-crossref # only refresh arXiv
 ```
 
-A full run takes a few minutes because the APIs are queried politely (with
+A full run takes a few minutes because both APIs are queried politely (with
 short sleeps between pages).
-
-## OpenAlex API key
-
-OpenAlex meters unauthenticated requests against a small daily budget shared
-across your whole network IP, so it rate-limits quickly. A **free** key gives
-you your own budget. Get one at
-<https://help.openalex.org/api/authentication/>.
-
-The scraper reads it from an environment variable so it never lives in the repo:
-
-```bash
-export OPENALEX_API_KEY=your_key_here
-python3 scraper/scrape.py
-```
-
-For the GitHub Action, add it as a repository secret named `OPENALEX_API_KEY`
-(**Settings → Secrets and variables → Actions → New repository secret**). The
-workflow already passes it through.
 
 ## Viewing locally
 

@@ -22,7 +22,7 @@
     <meta property="og:url" content="https://issamsouassi.github.io/recent-hydrology-ml-papers/" />
     <meta property="og:title" content="Recent Hydrology &amp; Machine Learning Papers" />
     <meta property="og:description"
-        content="Recent papers at the intersection of hydrology and AI/ML/DL, from arXiv, Crossref, and OpenAlex, updated every few hours." />
+        content="Recent papers at the intersection of hydrology and AI/ML/DL, from arXiv and Crossref, updated every few hours." />
     <meta property="og:site_name" content="Recent Hydrology-ML Papers" />
     <meta property="og:image" content="https://issamsouassi.github.io/recent-hydrology-ml-papers/preview.png" />
     <meta property="og:image:width" content="1200" />
@@ -30,7 +30,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Recent Hydrology &amp; Machine Learning Papers" />
     <meta name="twitter:description"
-        content="Recent hydrology + AI/ML/DL papers from arXiv, Crossref, and OpenAlex, updated every few hours." />
+        content="Recent hydrology + AI/ML/DL papers from arXiv and Crossref, updated every few hours." />
     <meta name="twitter:image" content="https://issamsouassi.github.io/recent-hydrology-ml-papers/preview.png" />
 
     <!-- Structured data: helps search engines understand the page -->
@@ -391,7 +391,6 @@
                 <span class="filter active" data-source="both">all</span>
                 <span class="filter" data-source="arxiv">arXiv</span>
                 <span class="filter" data-source="crossref">Crossref</span>
-                <span class="filter" data-source="openalex">OpenAlex</span>
             </div>
         </div>
 
@@ -503,9 +502,9 @@
             }
 
             function shortId(id, source) {
-                // DOIs (crossref, and openalex when it has one) can be long;
-                // truncate for display. arXiv ids are already short.
-                if (source === 'crossref' || source === 'openalex') {
+                // DOIs (crossref) can be long; truncate for display.
+                // arXiv ids are already short.
+                if (source === 'crossref') {
                     return id.length > 24 ? id.slice(0, 22) + "\u2026" : id;
                 }
                 return id;
@@ -596,12 +595,11 @@
 
             Promise.all([
                 fetchPapers('papers_arxiv.txt', 'arxiv'),
-                fetchPapers('papers_crossref.txt', 'crossref'),
-                fetchPapers('papers_openalex.txt', 'openalex')
+                fetchPapers('papers_crossref.txt', 'crossref')
             ]).then(function (lists) {
-                var papers = lists[0].concat(lists[1]).concat(lists[2]);
-                // de-duplicate across sources by shared DOI id (same paper can
-                // appear in Crossref and OpenAlex); keep the first seen.
+                var papers = lists[0].concat(lists[1]);
+                // de-duplicate by shared id (a paper could appear in more than
+                // one source); keep the first seen.
                 var seen = {};
                 papers = papers.filter(function (p) {
                     var key = (p.id || "").toLowerCase();
