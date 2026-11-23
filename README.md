@@ -1,5 +1,7 @@
 # recent hydrology-ML papers
 
+[![Live site](https://img.shields.io/badge/live%20site-online-1572a1)](https://issamsouassi.github.io/recent-hydrology-ml-papers/)
+
 A tiny static website that lists **recent papers at the intersection of
 hydrology and AI / machine learning / deep learning**, bucketed into
 *this week / this month / this year*. It pulls metadata from two free,
