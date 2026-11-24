@@ -338,6 +338,14 @@ EXCLUDE_CI = _ci(
     r"leaf wetness",
     r"pest (detection|management|infestation)",
     r"plant patholog",
+    # seismology / earthquake: may list "rainfall/hydrology/groundwater" as
+    # incidental input parameters but are not hydrology papers.
+    r"earthquake (forecast|predict|early warning|magnitude|catalog)",
+    r"\bseismicit",
+    r"seismic hazard",
+    r"ground motion",
+    r"\btectonic",
+    r"fault (rupture|slip|geometry|zone)",
 )
 
 GITHUB_RE = re.compile(
