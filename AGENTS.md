@@ -72,12 +72,15 @@ blurs the ML focus and floods the feed. Named large-sample benchmark datasets
 the infrastructure of ML-hydrology.
 
 Kept papers always get `ml-hydrology`, plus any of:
-`deep-learning`, `lstm`, `transformer`, `rainfall-runoff`, `forecasting`,
-`regional-hydrology`, `uncertainty`, `evaluation`, `extremes` (each driven by a
-`TAG_*` list). The `uncertainty`, `evaluation`, and `extremes` tags were added
-because probabilistic forecasting, skill metrics (NSE/KGE/CRPS), and
-hydrological extremes (floods/low-flow) are top themes in the maintainer's
-library. `lstm` and `transformer` are deep-learning architecture subsets.
+`deep-learning`, `lstm`, `transformer`, `generative`, `rainfall-runoff`,
+`forecasting`, `regional-hydrology`, `uncertainty`, `evaluation`, `extremes`
+(each driven by a `TAG_*` list). The `uncertainty`, `evaluation`, `extremes`,
+and `generative` tags were added because probabilistic forecasting, skill
+metrics (NSE/KGE/CRPS), hydrological extremes (floods/low-flow), and generative
+models (VAE/diffusion/flows) are top themes in the maintainer's library.
+`lstm`, `transformer`, and `generative` are deep-learning method subsets;
+generative-model terms also satisfy the ML gate (a diffusion/VAE/GAN paper is
+unambiguously ML).
 
 Case-sensitive lists (`ML_CS`, `TAG_DEEP_CS`, ...) exist so short acronyms
 (`LSTM`, `CNN`, `GAN`, `AI`, `ML`, `DL`) don't match ordinary lowercase words.

@@ -166,7 +166,6 @@ ML_CI = _ci(
     r"generative model",
     r"explainable (ai|artificial intelligence)",
     # modern / probabilistic ML vocabulary seen in hydrology-ML work
-    r"diffusion model",
     r"state[- ]space model",
     r"mixture[- ]of[- ]experts",
     r"\bemulator\b",
@@ -176,6 +175,11 @@ ML_CI = _ci(
     r"attention mechanism",
     r"encoder[- ]decoder",
     r"autoencoder",
+    r"variational auto[- ]?encoder",
+    r"diffusion[- ](model|based|probabilistic)",
+    r"denoising diffusion",
+    r"normalizing flow",
+    r"generative adversarial",
     # named large-sample benchmark datasets: these exist specifically as the
     # training/benchmark infrastructure for ML-hydrology, so a hydrology paper
     # centered on one is in scope even if it doesn't say "machine learning".
@@ -235,6 +239,24 @@ TAG_TRANSFORMER_CS = _cs(
     r"\bViT\b",
     r"\bBERT\b",
     r"\bGPT\b",
+)
+
+# generative models: CVAE/VAE, diffusion, normalizing flows, GANs, engression.
+# A distinct methodology, tightly coupled to probabilistic forecasting.
+TAG_GENERATIVE_CI = _ci(
+    r"generative (model|deep learning|adversarial|framework|approach)",
+    r"variational auto[- ]?encoder",
+    r"diffusion[- ](model|based|probabilistic)",
+    r"denoising diffusion",
+    r"score[- ]based (generative|model)",
+    r"normalizing flow",
+    r"\bengression\b",
+)
+TAG_GENERATIVE_CS = _cs(
+    r"\bVAE\b",
+    r"\bCVAE\b",
+    r"\bGAN(s)?\b",
+    r"\bDDPM\b",
 )
 
 TAG_RAINFALL_RUNOFF_CI = _ci(
@@ -395,6 +417,8 @@ def classify(text):
         tags.add("lstm")
     if _matches(text, TAG_TRANSFORMER_CI, TAG_TRANSFORMER_CS):
         tags.add("transformer")
+    if _matches(text, TAG_GENERATIVE_CI, TAG_GENERATIVE_CS):
+        tags.add("generative")
     if _matches(text, TAG_RAINFALL_RUNOFF_CI):
         tags.add("rainfall-runoff")
     if _matches(text, TAG_FORECAST_CI):
