@@ -149,10 +149,26 @@ hydroml-papers/
 ├── index.html                     # the website (HTML + CSS + vanilla JS)
 ├── papers_arxiv.txt               # scraped data: arXiv
 ├── papers_crossref.txt            # scraped data: Crossref
+├── favicon.png / favicon.ico      # water-drop browser-tab icon
+├── preview.png                    # social-share preview card
 ├── robots.txt
 ├── scraper/
 │   └── scrape.py                  # the harvester (stdlib only)
 ├── .github/workflows/update.yml   # 6-hourly auto-refresh
 ├── README.md                      # this file
-└── AGENTS.md                      # orientation for AI coding assistants
+├── AGENTS.md                      # orientation for AI coding assistants
+└── LICENSE                        # MIT (covers the code, not the paper data)
 ```
+
+## License
+
+The **code** in this repository (the scraper, the website, and supporting
+files) is released under the [MIT License](LICENSE) — you're free to reuse and
+adapt it, just keep the copyright notice.
+
+This license does **not** cover the paper metadata in `papers_*.txt`, which is
+harvested from [arXiv](https://arxiv.org/) and
+[Crossref](https://www.crossref.org/) and remains subject to their respective
+terms (Crossref metadata is largely CC0; arXiv metadata is used under its open
+access interoperability terms). Those sources are credited in the page footer.
+
