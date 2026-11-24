@@ -55,6 +55,7 @@ get any of these narrower tags, which drive the on-page topic filter:
 | `ml-hydrology`       | the broad field (all kept papers)                           |
 | `deep-learning`      | neural nets, LSTMs/CNNs/transformers, PINNs, GNNs, ...       |
 | `lstm`               | long short-term memory models specifically                  |
+| `transformer`        | transformer / attention architectures (ViT, BERT, GPT)      |
 | `rainfall-runoff`    | rainfall-runoff / streamflow / discharge modeling           |
 | `forecasting`        | forecasting, nowcasting, early warning, lead-time studies   |
 | `regional-hydrology` | regionalization, large-sample, ungauged basins, CAMELS, PUB |
@@ -63,9 +64,9 @@ get any of these narrower tags, which drive the on-page topic filter:
 | `extremes`           | floods, extreme events, low-flow, flood-frequency analysis   |
 
 The page has two filter rows: **topic** (all / deep learning / LSTM /
-rainfall-runoff / forecasting / regional / uncertainty / evaluation / extremes)
-and **source** (all / arXiv / Crossref), plus a **search box** that filters by
-title and author.
+transformer / rainfall-runoff / forecasting / regional / uncertainty /
+evaluation / extremes) and **source** (all / arXiv / Crossref), plus a
+**search box** that filters by title and author.
 
 ## Running the scraper
 

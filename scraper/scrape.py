@@ -224,6 +224,19 @@ TAG_DEEP_CS = _cs(
 TAG_LSTM_CI = _ci(r"long short[- ]term memory")
 TAG_LSTM_CS = _cs(r"\bLSTM\b")
 
+# transformer / attention architectures (a deep-learning sibling to LSTM).
+TAG_TRANSFORMER_CI = _ci(
+    r"\btransformer",
+    r"self[- ]attention",
+    r"attention mechanism",
+    r"vision transformer",
+)
+TAG_TRANSFORMER_CS = _cs(
+    r"\bViT\b",
+    r"\bBERT\b",
+    r"\bGPT\b",
+)
+
 TAG_RAINFALL_RUNOFF_CI = _ci(
     r"rainfall[- ]runoff",
     r"\brunoff (model|predict|simulat|generat)",
@@ -380,6 +393,8 @@ def classify(text):
         tags.add("deep-learning")
     if _matches(text, TAG_LSTM_CI, TAG_LSTM_CS):
         tags.add("lstm")
+    if _matches(text, TAG_TRANSFORMER_CI, TAG_TRANSFORMER_CS):
+        tags.add("transformer")
     if _matches(text, TAG_RAINFALL_RUNOFF_CI):
         tags.add("rainfall-runoff")
     if _matches(text, TAG_FORECAST_CI):
