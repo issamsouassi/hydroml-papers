@@ -251,6 +251,42 @@ TAG_REGIONAL_CI = _ci(
     r"cross[- ](basin|catchment|region)",
 )
 
+# uncertainty / probabilistic prediction (a major theme in the maintainer's
+# library: probabilistic streamflow forecasting, ensembles, quantiles, PIs).
+TAG_UNCERTAINTY_CI = _ci(
+    r"uncertaint",                   # uncertainty, uncertainties
+    r"probabilistic",
+    r"\bensemble (forecast|predict|member|mean|spread|kalman)",
+    r"quantile (regression|loss|forecast)",
+    r"prediction interval",
+    r"confidence interval",
+    r"bayesian",
+    r"conformal prediction",
+    r"predictive distribution",
+    r"credible interval",
+    r"aleatoric|epistemic",
+)
+
+# model evaluation / skill metrics / benchmarking (NSE, KGE, scoring rules,
+# large-sample benchmarks — also heavily represented in the library).
+TAG_EVALUATION_CI = _ci(
+    r"nash[- ]sutcliffe",
+    r"\bbenchmark",
+    r"model (evaluation|performance|diagnostic|intercomparison)",
+    r"scoring rule",
+    r"\bCRPS\b",
+    r"skill score",
+    r"performance metric",
+    r"evaluation (metric|framework|guideline)",
+    r"calibration and validation",
+)
+TAG_EVALUATION_CS = _cs(
+    r"\bNSE\b",
+    r"\bKGE\b",
+    r"\bRMSE\b",
+    r"\bMAE\b",
+)
+
 # ---- exclusion gate: strong non-hydrology domain signals -----------------
 # Some hydro terms ("water level", "discharge", "reservoir", "basin") are
 # heavily reused in unrelated engineering fields. If the text shows a strong
@@ -317,6 +353,10 @@ def classify(text):
         tags.add("forecasting")
     if _matches(text, TAG_REGIONAL_CI):
         tags.add("regional-hydrology")
+    if _matches(text, TAG_UNCERTAINTY_CI):
+        tags.add("uncertainty")
+    if _matches(text, TAG_EVALUATION_CI, TAG_EVALUATION_CS):
+        tags.add("evaluation")
     return tags
 
 

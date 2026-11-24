@@ -58,10 +58,13 @@ get any of these narrower tags, which drive the on-page topic filter:
 | `rainfall-runoff`    | rainfall-runoff / streamflow / discharge modeling           |
 | `forecasting`        | forecasting, nowcasting, early warning, lead-time studies   |
 | `regional-hydrology` | regionalization, large-sample, ungauged basins, CAMELS, PUB |
+| `uncertainty`        | probabilistic/ensemble forecasting, quantiles, Bayesian, PIs |
+| `evaluation`         | model skill & benchmarks: NSE, KGE, CRPS, scoring rules      |
 
 The page has two filter rows: **topic** (all / deep learning / LSTM /
-rainfall-runoff / forecasting / regional) and **source** (all / arXiv /
-Crossref), plus a **search box** that filters by title and author.
+rainfall-runoff / forecasting / regional / uncertainty / evaluation) and
+**source** (all / arXiv / Crossref), plus a **search box** that filters by
+title and author.
 
 ## Running the scraper
 
