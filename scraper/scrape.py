@@ -581,31 +581,40 @@ def _crossref_date(item, now):
     Returns a date, or None if nothing usable.
     """
     def parse(key):
+        """Return (date, precise) where `precise` is True only if the date
+        had an explicit month (year-only dates are imprecise and default to
+        Jan 1, which badly misrepresents recency)."""
         node = item.get(key)
         if not node or not node.get("date-parts"):
-            return None
+            return None, False
         parts = node["date-parts"][0]
         if not parts:
-            return None
+            return None, False
         y = parts[0]
         m = parts[1] if len(parts) > 1 else 1
         d = parts[2] if len(parts) > 2 else 1
+        precise = len(parts) > 1          # has at least a month
         try:
-            return dt.date(int(y), int(m), int(d))
+            return dt.date(int(y), int(m), int(d)), precise
         except (ValueError, TypeError):
-            return None
+            return None, False
 
-    created = parse("created")
+    created, _ = parse("created")
     for key in ("published-online", "published", "issued", "published-print"):
-        cand = parse(key)
+        cand, precise = parse(key)
         if cand is None:
             continue
-        if cand <= now:
-            return cand
-        # candidate is in the future: prefer 'created' as the real signal
-        if created is not None and created <= now:
+        if cand > now:
+            # future date: prefer 'created' as the real signal
+            if created is not None and created <= now:
+                return created
+            return now
+        # A year-only ("imprecise") date defaults to Jan 1 and can make a
+        # recently-registered preprint look ~a year old. If 'created' is
+        # both precise-enough and more recent, trust it instead.
+        if not precise and created is not None and created <= now and created > cand:
             return created
-        return now  # last resort: no better info than "around now"
+        return cand
     # no issue/print date at all -> fall back to created
     if created is not None:
         return min(created, now)
