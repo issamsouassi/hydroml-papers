@@ -1,6 +1,6 @@
 # recent hydrology-ML papers
 
-[![Live site](https://img.shields.io/badge/live%20site-online-1572a1)](https://issamsouassi.github.io/recent-hydrology-ml-papers/)
+[![Live site](https://img.shields.io/badge/live%20site-online-1572a1)](https://issamsouassi.github.io/hydroml-papers/)
 
 A tiny static website that lists **recent papers at the intersection of
 hydrology and AI / machine learning / deep learning**, bucketed into
@@ -123,7 +123,7 @@ the refreshed `.txt` files. You can also trigger it on demand from the repo's
 You do **not** need to buy a domain. GitHub Pages serves the site for free at
 `https://<your-username>.github.io/<repo-name>/`.
 
-1. Create an empty repo on GitHub, e.g. `recent-hydrology-ml-papers`
+1. Create an empty repo on GitHub, e.g. `hydroml-papers`
    (Settings → do not add a README; this folder already has one).
 2. From this folder:
    ```bash
@@ -131,12 +131,12 @@ You do **not** need to buy a domain. GitHub Pages serves the site for free at
    git add .
    git commit -m "initial commit: hydrology-ML papers site"
    git branch -M main
-   git remote add origin https://github.com/<your-username>/recent-hydrology-ml-papers.git
+   git remote add origin https://github.com/<your-username>/hydroml-papers.git
    git push -u origin main
    ```
 3. On GitHub: **Settings → Pages → Build and deployment → Source: Deploy from a
    branch**, branch `main`, folder `/ (root)`. Save.
-4. Wait ~1 minute, then open `https://<your-username>.github.io/recent-hydrology-ml-papers/`.
+4. Wait ~1 minute, then open `https://<your-username>.github.io/hydroml-papers/`.
 5. (Optional) To use a custom domain later, buy one (~$10–15/yr), add a `CNAME`
    file containing just the domain, and point the domain's DNS at GitHub Pages.
 
@@ -145,7 +145,7 @@ The scheduled workflow keeps the data fresh automatically after the first push.
 ## Project layout
 
 ```
-recent-hydrology-ml-papers/
+hydroml-papers/
 ├── index.html                     # the website (HTML + CSS + vanilla JS)
 ├── papers_arxiv.txt               # scraped data: arXiv
 ├── papers_crossref.txt            # scraped data: Crossref
