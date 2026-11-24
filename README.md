@@ -60,10 +60,11 @@ get any of these narrower tags, which drive the on-page topic filter:
 | `regional-hydrology` | regionalization, large-sample, ungauged basins, CAMELS, PUB |
 | `uncertainty`        | probabilistic/ensemble forecasting, quantiles, Bayesian, PIs |
 | `evaluation`         | model skill & benchmarks: NSE, KGE, CRPS, scoring rules      |
+| `extremes`           | floods, extreme events, low-flow, flood-frequency analysis   |
 
 The page has two filter rows: **topic** (all / deep learning / LSTM /
-rainfall-runoff / forecasting / regional / uncertainty / evaluation) and
-**source** (all / arXiv / Crossref), plus a **search box** that filters by
+rainfall-runoff / forecasting / regional / uncertainty / evaluation / extremes)
+and **source** (all / arXiv / Crossref), plus a **search box** that filters by
 title and author.
 
 ## Running the scraper

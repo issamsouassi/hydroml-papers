@@ -73,9 +73,10 @@ the infrastructure of ML-hydrology.
 
 Kept papers always get `ml-hydrology`, plus any of:
 `deep-learning`, `lstm`, `rainfall-runoff`, `forecasting`, `regional-hydrology`,
-`uncertainty`, `evaluation` (each driven by a `TAG_*` list). The `uncertainty`
-and `evaluation` tags were added because probabilistic forecasting and skill
-metrics (NSE/KGE/CRPS) are top themes in the maintainer's library.
+`uncertainty`, `evaluation`, `extremes` (each driven by a `TAG_*` list). The
+`uncertainty`, `evaluation`, and `extremes` tags were added because
+probabilistic forecasting, skill metrics (NSE/KGE/CRPS), and hydrological
+extremes (floods/low-flow) are top themes in the maintainer's library.
 
 Case-sensitive lists (`ML_CS`, `TAG_DEEP_CS`, ...) exist so short acronyms
 (`LSTM`, `CNN`, `GAN`, `AI`, `ML`, `DL`) don't match ordinary lowercase words.

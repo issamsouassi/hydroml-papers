@@ -287,6 +287,23 @@ TAG_EVALUATION_CS = _cs(
     r"\bMAE\b",
 )
 
+# hydrological extremes: floods, extreme events, low-flow/droughts-as-extreme,
+# flood-frequency analysis (16% of the maintainer's library — the largest
+# previously-unfiltered theme).
+TAG_EXTREMES_CI = _ci(
+    r"extreme (event|flow|value|precipitat|rainfall|hydrolog|discharge)",
+    r"\bflood\b",
+    r"flood (forecast|predict|frequency|risk|inundation|mapping|event)",
+    r"flash flood",
+    r"low[- ]flow",
+    r"peak flow",
+    r"high[- ]flow",
+    r"frequency analysis",
+    r"return period",
+    r"extreme value",
+    r"heavy (rainfall|precipitation)",
+)
+
 # ---- exclusion gate: strong non-hydrology domain signals -----------------
 # Some hydro terms ("water level", "discharge", "reservoir", "basin") are
 # heavily reused in unrelated engineering fields. If the text shows a strong
@@ -357,6 +374,8 @@ def classify(text):
         tags.add("uncertainty")
     if _matches(text, TAG_EVALUATION_CI, TAG_EVALUATION_CS):
         tags.add("evaluation")
+    if _matches(text, TAG_EXTREMES_CI):
+        tags.add("extremes")
     return tags
 
 
