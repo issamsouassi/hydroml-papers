@@ -330,6 +330,14 @@ EXCLUDE_CI = _ci(
     r"cash flow",
     r"traffic flow",
     r"water[- ]cooled",               # cooling systems, not hydrology
+    # crop / plant pathology: these use "soil moisture", "leaf wetness" etc. as
+    # minor features but are agronomy, not hydrology.
+    r"crop disease",
+    r"plant disease",
+    r"disease (risk|incidence|severity|detection|classification) .{0,30}(crop|plant|leaf|tomato|pepper|wheat|maize|rice|vine)",
+    r"leaf wetness",
+    r"pest (detection|management|infestation)",
+    r"plant patholog",
 )
 
 GITHUB_RE = re.compile(
